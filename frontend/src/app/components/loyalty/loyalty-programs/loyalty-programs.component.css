@@ -1,1 +1,11 @@
 /* Styles for loyalty programs component */
+
+/* Add a simple fade-in animation for toast notifications */
+@keyframes fadeInToast {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fixed.top-4.right-4 .rounded {
+  animation: fadeInToast 0.3s;
+}

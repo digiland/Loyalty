@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { LoyaltyProgramService } from '../../../services/loyalty-program.service';
 import { LoyaltyProgram, LoyaltyProgramType } from '../../../models/loyalty-program.model';
 import { Router } from '@angular/router';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-loyalty-programs',
@@ -19,7 +20,8 @@ export class LoyaltyProgramsComponent implements OnInit {
 
   constructor(
     private loyaltyProgramService: LoyaltyProgramService,
-    private router: Router
+    private router: Router,
+    public toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -55,10 +57,12 @@ export class LoyaltyProgramsComponent implements OnInit {
 
   createNewProgram(type: LoyaltyProgramType): void {
     this.router.navigate(['/loyalty-programs/create'], { queryParams: { type } });
+    this.toastService.show('Redirecting to create new program', 'info');
   }
 
   editProgram(program: LoyaltyProgram): void {
     this.router.navigate(['/loyalty-programs/edit', program.id]);
+    this.toastService.show('Redirecting to edit program', 'info');
   }
 
   deleteProgram(program: LoyaltyProgram): void {
@@ -67,9 +71,11 @@ export class LoyaltyProgramsComponent implements OnInit {
         .subscribe({
           next: () => {
             this.loyaltyPrograms = this.loyaltyPrograms.filter(p => p.id !== program.id);
+            this.toastService.show('Program deleted successfully', 'success');
           },
           error: (err) => {
             this.error = 'Error deleting program: ' + err.message;
+            this.toastService.show('Error deleting program', 'error');
           }
         });
     }
@@ -83,10 +89,12 @@ export class LoyaltyProgramsComponent implements OnInit {
           const index = this.loyaltyPrograms.findIndex(p => p.id === updated.id);
           if (index !== -1) {
             this.loyaltyPrograms[index] = updated;
+            this.toastService.show(`Program ${updated.active ? 'activated' : 'deactivated'} successfully`, 'success');
           }
         },
         error: (err) => {
           this.error = 'Error updating program status: ' + err.message;
+          this.toastService.show('Error updating program status', 'error');
         }
       });
   }

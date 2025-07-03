@@ -25,7 +25,6 @@ export class RegisterComponent {
       contact_person: [''],
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirm_password: ['', [Validators.required]],
-      loyalty_rate: [1.0, [Validators.required, Validators.min(0.1)]]
     }, {
       validators: this.passwordMatchValidator
     });
@@ -48,7 +47,7 @@ export class RegisterComponent {
         email: this.registerForm.value.email,
         contact_person: this.registerForm.value.contact_person || undefined,
         password: this.registerForm.value.password,
-        loyalty_rate: this.registerForm.value.loyalty_rate
+        loyalty_rate: 1 // Always set to 1 on registration
       };
       
       this.authService.register(businessData).subscribe({
