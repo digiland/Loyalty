@@ -13,13 +13,16 @@ class TransactionCreate(BaseModel):
     business_id: int
     customer_phone_number: str
     amount_spent: float
+    loyalty_program_id: Optional[int] = None
 
 class Transaction(TransactionBase):
     id: int
     business_id: int
     customer_id: int
+    loyalty_program_id: Optional[int] = None
     transaction_type: TransactionType = TransactionType.EARN
     reward_description: Optional[str] = None
+    cashback_amount: Optional[float] = None
     timestamp: datetime
 
     class Config:
@@ -31,6 +34,26 @@ class RedemptionCreate(BaseModel):
     customer_phone_number: str
     points_to_redeem: int
     reward_description: str
+    loyalty_program_id: Optional[int] = None
+
+# Reward schemas
+class RewardBase(BaseModel):
+    name: str
+    description: str
+    points_required: int
+    is_active: bool = True
+    stock_limit: Optional[int] = None
+
+class RewardCreate(RewardBase):
+    loyalty_program_id: int
+
+class Reward(RewardBase):
+    id: int
+    loyalty_program_id: int
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
 
 # Schemas for Customer
 class CustomerBase(BaseModel):
@@ -129,6 +152,7 @@ class LoyaltyProgram(LoyaltyProgramBase):
     membership_fee: Optional[float] = None
     membership_period_days: Optional[int] = None
     membership_benefits: Optional[str] = None
+    rewards: Optional[List[Reward]] = []
 
     class Config:
         orm_mode = True
@@ -201,10 +225,3 @@ class ReferralTransactionCreate(BaseModel):
     referral_code: str
     customer_phone_number: str
     loyalty_program_id: int
-
-class RedemptionCreate(BaseModel):
-    business_id: int
-    customer_phone_number: str
-    points_to_redeem: int
-    reward_description: str
-    loyalty_program_id: Optional[int] = None

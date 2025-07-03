@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
 from sqlalchemy.orm import Session
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import crud, schemas, auth, crud_loyalty_programs
+import crud, schemas, auth, crud_loyalty_programs, models
 from database import get_db
 from typing import List, Optional
 from auth import oauth2_scheme
@@ -272,3 +272,85 @@ def get_customer_memberships(
     ).all()
     
     return memberships
+
+# Reward management endpoints
+@router.post("/rewards", response_model=schemas.Reward)
+def create_reward(
+    reward: schemas.RewardCreate,
+    db: Session = Depends(get_db),
+    current_business: schemas.Business = Depends(get_current_business)
+):
+    # Validate the program belongs to the business
+    program = crud_loyalty_programs.get_loyalty_program(db, reward.loyalty_program_id)
+    if not program:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Loyalty program not found"
+        )
+    
+    if program.business_id != current_business.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to create rewards for this program"
+        )
+    
+    return crud_loyalty_programs.create_reward(db, reward)
+
+@router.get("/rewards/{program_id}", response_model=List[schemas.Reward])
+def get_program_rewards(
+    program_id: int = Path(..., gt=0),
+    db: Session = Depends(get_db),
+    current_business: schemas.Business = Depends(get_current_business)
+):
+    # Validate the program belongs to the business
+    program = crud_loyalty_programs.get_loyalty_program(db, program_id)
+    if not program:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Loyalty program not found"
+        )
+    
+    if program.business_id != current_business.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to view rewards for this program"
+        )
+    
+    return crud_loyalty_programs.get_rewards_by_program(db, program_id)
+
+@router.get("/customer/{phone_number}/available-rewards")
+def get_customer_available_rewards(
+    phone_number: str = Path(..., min_length=9, max_length=15),
+    db: Session = Depends(get_db),
+    current_business: schemas.Business = Depends(get_current_business)
+):
+    return crud_loyalty_programs.get_available_rewards_for_customer(db, phone_number, current_business.id)
+
+@router.post("/redeem", response_model=schemas.Transaction)
+def redeem_reward(
+    redemption: schemas.RedemptionCreate,
+    db: Session = Depends(get_db),
+    current_business: schemas.Business = Depends(get_current_business)
+):
+    # Verify business owns the redemption
+    if redemption.business_id != current_business.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to process redemptions for this business"
+        )
+    
+    try:
+        return crud_loyalty_programs.redeem_reward(db, redemption)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+@router.get("/customer/{phone_number}/memberships", response_model=List[schemas.CustomerMembership])
+def get_customer_memberships_for_business(
+    phone_number: str = Path(..., min_length=9, max_length=15),
+    db: Session = Depends(get_db),
+    current_business: schemas.Business = Depends(get_current_business)
+):
+    return crud_loyalty_programs.get_customer_memberships_for_business(db, phone_number, current_business.id)

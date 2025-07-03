@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loyalty Platform - Customer Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .glass-effect {
+            backdrop-filter: blur(16px);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .chat-widget {
+            transition: all 0.3s ease;
+        }
+        .chat-widget.closed {
+            transform: translateY(100%);
+        }
+        .typing-indicator {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .message-bubble {
+            animation: fadeInUp 0.3s ease;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg text-white py-6 shadow-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold">Loyalty Rewards</h1>
+                    <p class="mt-1 opacity-90">Your points, your rewards, your way</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="chatToggle" class="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full p-3 transition-all">
+                        <i class="fas fa-comments text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Points Check Section -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-star text-yellow-500 mr-2"></i>
+                        Check Your Points
+                    </h2>
+                    
+                    <!-- Error Message -->
+                    <div id="errorMessage" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        <span id="errorText"></span>
+                    </div>
+                    
+                    <!-- Phone Number Form -->
+                    <form id="checkPointsForm" class="mb-6">
+                        <div class="flex gap-4">
+                            <div class="flex-1">
+                                <label for="phone_number" class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-phone mr-1"></i>
+                                    Phone Number
+                                </label>
+                                <input 
+                                    type="tel" 
+                                    id="phone_number" 
+                                    name="phone_number"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                                    placeholder="+1234567890"
+                                    required
+                                    pattern="^\+?\d{9,15}$"
+                                >
+                            </div>
+                            <div class="flex items-end">
+                                <button 
+                                    type="submit" 
+                                    class="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all transform hover:scale-105 shadow-md"
+                                >
+                                    <i class="fas fa-search mr-2"></i>
+                                    Check Points
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <!-- Loading State -->
+                    <div id="loadingState" class="hidden text-center py-8">
+                        <i class="fas fa-spinner fa-spin text-4xl text-purple-500 mb-4"></i>
+                        <p class="text-gray-600">Loading your points...</p>
+                    </div>
+                    
+                    <!-- Results Section -->
+                    <div id="resultsSection" class="hidden">
+                        <!-- Points Overview -->
+                        <div class="bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl p-6 mb-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-700">Your Total Points</h3>
+                                    <p id="totalPoints" class="text-4xl font-bold text-purple-600 mt-2">0</p>
+                                </div>
+                                <div class="text-6xl opacity-30">
+                                    <i class="fas fa-coins"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Stats -->
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div class="bg-green-50 rounded-lg p-4">
+                                <div class="flex items-center">
+                                    <i class="fas fa-plus-circle text-green-600 text-2xl mr-3"></i>
+                                    <div>
+                                        <p class="text-sm text-gray-600">Points Earned</p>
+                                        <p id="pointsEarned" class="text-xl font-bold text-green-600">0</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-orange-50 rounded-lg p-4">
+                                <div class="flex items-center">
+                                    <i class="fas fa-gift text-orange-600 text-2xl mr-3"></i>
+                                    <div>
+                                        <p class="text-sm text-gray-600">Points Redeemed</p>
+                                        <p id="pointsRedeemed" class="text-xl font-bold text-orange-600">0</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Recent Transactions -->
+                        <div class="bg-white border rounded-lg p-4">
+                            <h4 class="text-lg font-semibold text-gray-700 mb-4">
+                                <i class="fas fa-history text-gray-500 mr-2"></i>
+                                Recent Transactions
+                            </h4>
+                            <div id="transactionsContainer" class="space-y-3">
+                                <!-- Transactions will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recommendations Sidebar -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">
+                        <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
+                        Recommendations
+                    </h3>
+                    <div id="recommendationsContainer" class="space-y-3">
+                        <div class="text-center text-gray-500 py-8">
+                            <i class="fas fa-magic text-2xl mb-2"></i>
+                            <p>Check your points to see personalized recommendations!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Chat Widget -->
+    <div id="chatWidget" class="fixed bottom-4 right-4 w-80 h-96 bg-white rounded-xl shadow-2xl chat-widget closed z-50">
+        <div class="flex flex-col h-full">
+            <!-- Chat Header -->
+            <div class="gradient-bg text-white p-4 rounded-t-xl">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fas fa-robot text-xl mr-2"></i>
+                        <h4 class="font-semibold">Loyalty Assistant</h4>
+                    </div>
+                    <button id="closeChatBtn" class="text-white hover:text-gray-200 transition-colors">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Chat Messages -->
+            <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-3">
+                <div class="message-bubble">
+                    <div class="bg-gray-100 rounded-lg p-3 max-w-xs">
+                        <p class="text-sm">👋 Hi! I'm your loyalty assistant. Ask me about your points, rewards, or referrals!</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Typing Indicator -->
+            <div id="typingIndicator" class="hidden px-4 py-2">
+                <div class="flex items-center text-gray-500">
+                    <div class="typing-indicator">
+                        <i class="fas fa-circle text-xs mr-1"></i>
+                        <i class="fas fa-circle text-xs mr-1"></i>
+                        <i class="fas fa-circle text-xs mr-1"></i>
+                    </div>
+                    <span class="text-sm ml-2">Assistant is typing...</span>
+                </div>
+            </div>
+            
+            <!-- Chat Input -->
+            <div class="p-4 border-t">
+                <form id="chatForm" class="flex gap-2">
+                    <input 
+                        type="text" 
+                        id="chatInput" 
+                        placeholder="Ask about your points, rewards, or referrals..."
+                        class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                        required
+                    >
+                    <button 
+                        type="submit" 
+                        class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all"
+                    >
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Toggle Button (when chat is closed) -->
+    <button id="chatToggleBtn" class="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110 z-40">
+        <i class="fas fa-comments text-xl"></i>
+    </button>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>

@@ -62,6 +62,7 @@ export interface LoyaltyProgram extends LoyaltyProgramBase {
   membership_fee?: number;
   membership_period_days?: number;
   membership_benefits?: string;
+  rewards?: Reward[];
 }
 
 export interface CustomerMembership {
@@ -92,4 +93,34 @@ export interface ReferralCreate {
   loyalty_program_id: number;
   referrer_phone_number: string;
   referred_phone_number: string;
+}
+
+export interface Reward {
+  id: number;
+  loyalty_program_id: number;
+  name: string;
+  description: string;
+  points_required: number;
+  is_active: boolean;
+  stock_limit?: number;
+  created_at: string;
+}
+
+export interface RewardCreate {
+  loyalty_program_id: number;
+  name: string;
+  description: string;
+  points_required: number;
+  is_active: boolean;
+  stock_limit?: number;
+}
+
+export interface CustomerMembershipWithProgram extends CustomerMembership {
+  loyalty_program?: LoyaltyProgram;
+}
+
+export interface AvailableReward {
+  reward: Reward;
+  membership: CustomerMembership;
+  customer_points: number;
 }

@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { CommonModule } from '@angular/common';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
@@ -14,6 +15,7 @@ import { RedeemPointsComponent } from './components/loyalty/redeem-points/redeem
 import { CustomerSearchComponent } from './components/customers/customer-search/customer-search.component';
 import { LoyaltyProgramsComponent } from './components/loyalty/loyalty-programs/loyalty-programs.component';
 import { ProgramFormComponent } from './components/loyalty/program-form/program-form.component';
+import { RewardsComponent } from './components/loyalty/rewards/rewards.component';
 
 @NgModule({
   declarations: [
@@ -25,10 +27,12 @@ import { ProgramFormComponent } from './components/loyalty/program-form/program-
     RedeemPointsComponent,
     CustomerSearchComponent,
     LoyaltyProgramsComponent,
-    ProgramFormComponent
+    ProgramFormComponent,
+    RewardsComponent
   ],
   imports: [
     BrowserModule,
+    CommonModule,
     AppRoutingModule,
     HttpClientModule,
     ReactiveFormsModule,

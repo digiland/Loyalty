@@ -39,6 +39,9 @@ class LoyaltyProgram(Base):
     membership_period_days = Column(Integer, default=365)
     membership_benefits = Column(Text, nullable=True)
     
+    # Rewards for the loyalty program
+    rewards = relationship("Reward", back_populates="loyalty_program", cascade="all, delete-orphan")
+    
     business = relationship("Business", back_populates="loyalty_programs")
     
 class TierLevel(Base):
@@ -52,6 +55,20 @@ class TierLevel(Base):
     multiplier = Column(Float, default=1.0)  # Points multiplier for this tier
     
     loyalty_program = relationship("LoyaltyProgram", back_populates="tier_levels")
+
+class Reward(Base):
+    __tablename__ = "rewards"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    loyalty_program_id = Column(Integer, ForeignKey("loyalty_programs.id"))
+    name = Column(String)
+    description = Column(Text)
+    points_required = Column(Integer)
+    is_active = Column(Boolean, default=True)
+    stock_limit = Column(Integer, nullable=True)  # Optional stock limit
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    
+    loyalty_program = relationship("LoyaltyProgram", back_populates="rewards")
 
 class Business(Base):
     __tablename__ = "businesses"

@@ -7,6 +7,7 @@ import {
   LoyaltyProgram
 } from '../../../models/loyalty-program.model';
 import { LoyaltyProgramService } from '../../../services/loyalty-program.service';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-program-form',
@@ -21,6 +22,7 @@ export class ProgramFormComponent implements OnInit {
   loading = false;
   error = '';
   businessId: number = 0;
+  currentProgram?: LoyaltyProgram;
 
   // Enum for template
   programTypes = LoyaltyProgramType;
@@ -29,7 +31,8 @@ export class ProgramFormComponent implements OnInit {
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
-    private loyaltyProgramService: LoyaltyProgramService
+    private loyaltyProgramService: LoyaltyProgramService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -64,9 +67,21 @@ export class ProgramFormComponent implements OnInit {
   }
 
   loadBusinessId(): void {
-    // Get the business ID from local storage
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    this.businessId = user.id;
+    const currentBusiness = this.authService.currentBusinessValue;
+    if (currentBusiness && currentBusiness.id) {
+      this.businessId = currentBusiness.id;
+    } else {
+      // Try to load current business from API
+      this.authService.getCurrentBusiness().subscribe({
+        next: (business) => {
+          this.businessId = business.id;
+        },
+        error: (error) => {
+          console.error('Error loading business data:', error);
+          this.error = 'User session invalid. Please log in again.';
+        }
+      });
+    }
   }
 
   loadProgramData(programId: number): void {
@@ -74,6 +89,7 @@ export class ProgramFormComponent implements OnInit {
     this.loyaltyProgramService.getLoyaltyProgram(programId)
       .subscribe({
         next: (program) => {
+          this.currentProgram = program;
           this.programType = program.program_type;
           this.initForm();
           this.patchFormWithProgramData(program);
@@ -297,6 +313,7 @@ export class ProgramFormComponent implements OnInit {
 
   // Helper for displaying form control errors
   hasError(controlName: string, errorName: string, formArrayName?: string, index?: number) {
+    if (!this.programForm) return false;
     let control;
     
     if (formArrayName && index !== undefined) {
@@ -312,6 +329,7 @@ export class ProgramFormComponent implements OnInit {
   }
 
   getFormControlClass(controlName: string, formArrayName?: string, index?: number) {
+    if (!this.programForm) return '';
     let control;
     
     if (formArrayName && index !== undefined) {

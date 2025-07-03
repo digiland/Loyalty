@@ -1,0 +1,120 @@
+<div class="rewards-section">
+  <div class="flex justify-between items-center mb-4">
+    <h3 class="text-lg font-medium">Rewards</h3>
+    <button 
+      (click)="toggleCreateForm()"
+      class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+    >
+      {{ isCreating ? 'Cancel' : 'Add Reward' }}
+    </button>
+  </div>
+
+  <!-- Create Reward Form -->
+  <div *ngIf="isCreating" class="bg-gray-50 p-4 rounded mb-4">
+    <form [formGroup]="rewardForm" (ngSubmit)="createReward()">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Reward Name</label>
+          <input 
+            type="text" 
+            formControlName="name"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md"
+            placeholder="e.g., Free Coffee"
+          >
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Points Required</label>
+          <input 
+            type="number" 
+            formControlName="points_required"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md"
+            min="1"
+          >
+        </div>
+      </div>
+      
+      <div class="mt-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <textarea 
+          formControlName="description"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md"
+          rows="3"
+          placeholder="Describe what the customer gets..."
+        ></textarea>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Stock Limit (Optional)</label>
+          <input 
+            type="number" 
+            formControlName="stock_limit"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md"
+            min="1"
+            placeholder="Leave empty for unlimited"
+          >
+        </div>
+        
+        <div class="flex items-center">
+          <input 
+            type="checkbox" 
+            formControlName="is_active"
+            class="mr-2"
+            id="is_active"
+          >
+          <label for="is_active" class="text-sm text-gray-700">Active</label>
+        </div>
+      </div>
+      
+      <div class="mt-4">
+        <button 
+          type="submit"
+          [disabled]="rewardForm.invalid"
+          class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+        >
+          Create Reward
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+    {{ error }}
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="text-center py-4">
+    <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+    <p class="mt-2 text-gray-600">Loading rewards...</p>
+  </div>
+
+  <!-- Rewards List -->
+  <div *ngIf="!loading && rewards.length === 0" class="text-center py-8 bg-gray-50 rounded">
+    <p class="text-gray-500">No rewards created yet. Add your first reward!</p>
+  </div>
+
+  <div *ngIf="!loading && rewards.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div *ngFor="let reward of rewards" class="bg-white border rounded-lg p-4">
+      <div class="flex justify-between items-start mb-2">
+        <h4 class="font-medium">{{ reward.name }}</h4>
+        <span 
+          [ngClass]="reward.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
+          class="px-2 py-1 text-xs rounded-full"
+        >
+          {{ reward.is_active ? 'Active' : 'Inactive' }}
+        </span>
+      </div>
+      
+      <p class="text-sm text-gray-600 mb-3">{{ reward.description }}</p>
+      
+      <div class="flex justify-between items-center text-sm">
+        <span class="font-bold text-blue-600">{{ reward.points_required }} points</span>
+        <span *ngIf="reward.stock_limit" class="text-gray-500">
+          Limit: {{ reward.stock_limit }}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>

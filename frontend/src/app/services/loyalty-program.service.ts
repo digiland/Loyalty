@@ -7,8 +7,13 @@ import {
   LoyaltyProgramCreate, 
   CustomerMembership,
   Referral,
-  ReferralCreate
+  ReferralCreate,
+  Reward,
+  RewardCreate,
+  AvailableReward,
+  CustomerMembershipWithProgram
 } from '../models/loyalty-program.model';
+import { Transaction, RedemptionCreate } from '../models/transaction.model';
 
 @Injectable({
   providedIn: 'root'
@@ -61,5 +66,26 @@ export class LoyaltyProgramService {
   // Get customer memberships
   getCustomerMemberships(phoneNumber: string): Observable<CustomerMembership[]> {
     return this.http.get<CustomerMembership[]>(`${this.apiUrl}/loyalty-programs/customer/${phoneNumber}/memberships`);
+  }
+
+  // Reward management methods
+  createReward(reward: RewardCreate): Observable<Reward> {
+    return this.http.post<Reward>(`${this.apiUrl}/loyalty-programs/rewards`, reward);
+  }
+
+  getProgramRewards(programId: number): Observable<Reward[]> {
+    return this.http.get<Reward[]>(`${this.apiUrl}/loyalty-programs/rewards/${programId}`);
+  }
+
+  getCustomerAvailableRewards(phoneNumber: string): Observable<AvailableReward[]> {
+    return this.http.get<AvailableReward[]>(`${this.apiUrl}/loyalty-programs/customer/${phoneNumber}/available-rewards`);
+  }
+
+  redeemReward(redemption: RedemptionCreate): Observable<Transaction> {
+    return this.http.post<Transaction>(`${this.apiUrl}/loyalty-programs/redeem`, redemption);
+  }
+
+  getCustomerMembershipsForBusiness(phoneNumber: string): Observable<CustomerMembershipWithProgram[]> {
+    return this.http.get<CustomerMembershipWithProgram[]>(`${this.apiUrl}/loyalty-programs/customer/${phoneNumber}/memberships`);
   }
 }

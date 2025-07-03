@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-import models, schemas
+import models, schemas, crud
 from typing import Union
 import datetime
 import uuid
@@ -323,3 +323,122 @@ def process_transaction(db: Session, transaction: schemas.TransactionCreate):
     db.commit()
     db.refresh(db_transaction)
     return db_transaction
+
+# Reward management functions
+def create_reward(db: Session, reward: schemas.RewardCreate):
+    db_reward = models.Reward(
+        loyalty_program_id=reward.loyalty_program_id,
+        name=reward.name,
+        description=reward.description,
+        points_required=reward.points_required,
+        is_active=reward.is_active,
+        stock_limit=reward.stock_limit
+    )
+    db.add(db_reward)
+    db.commit()
+    db.refresh(db_reward)
+    return db_reward
+
+def get_rewards_by_program(db: Session, program_id: int):
+    return db.query(models.Reward).filter(
+        models.Reward.loyalty_program_id == program_id,
+        models.Reward.is_active == True
+    ).all()
+
+def get_available_rewards_for_customer(db: Session, phone_number: str, business_id: int):
+    # Get customer
+    customer = db.query(models.Customer).filter(models.Customer.phone_number == phone_number).first()
+    if not customer:
+        return []
+    
+    # Get customer memberships for this business
+    memberships = db.query(models.CustomerMembership).join(
+        models.LoyaltyProgram,
+        models.CustomerMembership.loyalty_program_id == models.LoyaltyProgram.id
+    ).filter(
+        models.CustomerMembership.customer_id == customer.id,
+        models.LoyaltyProgram.business_id == business_id
+    ).all()
+    
+    available_rewards = []
+    for membership in memberships:
+        # Get rewards for this program that the customer can afford
+        rewards = db.query(models.Reward).filter(
+            models.Reward.loyalty_program_id == membership.loyalty_program_id,
+            models.Reward.is_active == True,
+            models.Reward.points_required <= membership.points
+        ).all()
+        
+        for reward in rewards:
+            available_rewards.append({
+                'reward': reward,
+                'membership': membership,
+                'customer_points': membership.points
+            })
+    
+    return available_rewards
+
+def redeem_reward(db: Session, redemption: schemas.RedemptionCreate):
+    # Find customer
+    customer = db.query(models.Customer).filter(models.Customer.phone_number == redemption.customer_phone_number).first()
+    if not customer:
+        raise Exception("Customer not found")
+    
+    # If loyalty program is specified, handle program-specific redemption
+    if redemption.loyalty_program_id:
+        # Get customer membership
+        membership = db.query(models.CustomerMembership).filter(
+            models.CustomerMembership.customer_id == customer.id,
+            models.CustomerMembership.loyalty_program_id == redemption.loyalty_program_id
+        ).first()
+        
+        if not membership:
+            raise Exception("Customer is not a member of this loyalty program")
+        
+        # Check if customer has enough points in this program
+        if membership.points < redemption.points_to_redeem:
+            raise Exception(f"Not enough points in this program. Customer has {membership.points} points, but {redemption.points_to_redeem} were requested.")
+        
+        # Deduct points from program membership
+        membership.points -= redemption.points_to_redeem
+        
+        # Also deduct from total points for backward compatibility
+        customer.total_points -= redemption.points_to_redeem
+        
+        # Create transaction
+        db_transaction = models.Transaction(
+            business_id=redemption.business_id,
+            customer_id=customer.id,
+            loyalty_program_id=redemption.loyalty_program_id,
+            amount_spent=0,
+            points_earned=-redemption.points_to_redeem,
+            transaction_type=models.TransactionType.REDEMPTION,
+            reward_description=redemption.reward_description
+        )
+        
+        db.add(db_transaction)
+        db.commit()
+        db.refresh(db_transaction)
+        return db_transaction
+    
+    # Legacy redemption (no specific program)
+    else:
+        # Use the existing legacy redemption logic
+        return crud.redeem_points(db, redemption)
+
+def get_customer_memberships_for_business(db: Session, phone_number: str, business_id: int):
+    # Find customer
+    customer = db.query(models.Customer).filter(models.Customer.phone_number == phone_number).first()
+    if not customer:
+        return []
+    
+    # Get memberships for this business
+    memberships = db.query(models.CustomerMembership).join(
+        models.LoyaltyProgram,
+        models.CustomerMembership.loyalty_program_id == models.LoyaltyProgram.id
+    ).filter(
+        models.CustomerMembership.customer_id == customer.id,
+        models.LoyaltyProgram.business_id == business_id
+    ).all()
+    
+    return memberships

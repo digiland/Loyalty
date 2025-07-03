@@ -15,7 +15,7 @@
       {{ error }}
     </div>
 
-    <form [formGroup]="programForm" (ngSubmit)="onSubmit()" class="bg-white rounded shadow p-6">
+    <form *ngIf="programForm" [formGroup]="programForm" (ngSubmit)="onSubmit()" class="bg-white rounded shadow p-6">
       <!-- Common fields for all program types -->
       <div class="mb-4">
         <label class="block text-gray-700 text-sm font-bold mb-2" for="name">
@@ -286,5 +286,10 @@
         </button>
       </div>
     </form>
+
+    <!-- Rewards Section - Only show in edit mode for existing programs -->
+    <div *ngIf="isEditMode && programId && currentProgram" class="mt-8">
+      <app-rewards [loyaltyProgram]="currentProgram"></app-rewards>
+    </div>
   </ng-container>
 </div>

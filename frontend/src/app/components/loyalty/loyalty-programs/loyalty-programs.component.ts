@@ -3,6 +3,7 @@ import { LoyaltyProgramService } from '../../../services/loyalty-program.service
 import { LoyaltyProgram, LoyaltyProgramType } from '../../../models/loyalty-program.model';
 import { Router } from '@angular/router';
 import { ToastService } from '../../../services/toast.service';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-loyalty-programs',
@@ -21,7 +22,8 @@ export class LoyaltyProgramsComponent implements OnInit {
   constructor(
     private loyaltyProgramService: LoyaltyProgramService,
     private router: Router,
-    public toastService: ToastService
+    public toastService: ToastService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -30,9 +32,21 @@ export class LoyaltyProgramsComponent implements OnInit {
   }
 
   loadBusinessId(): void {
-    // Get the business ID from local storage
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    this.businessId = user.id;
+    const currentBusiness = this.authService.currentBusinessValue;
+    if (currentBusiness && currentBusiness.id) {
+      this.businessId = currentBusiness.id;
+    } else {
+      // Try to load current business from API
+      this.authService.getCurrentBusiness().subscribe({
+        next: (business) => {
+          this.businessId = business.id;
+        },
+        error: (error) => {
+          console.error('Error loading business data:', error);
+          this.error = 'User session invalid. Please log in again.';
+        }
+      });
+    }
   }
 
   loadPrograms(): void {
