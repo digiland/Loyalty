@@ -1,0 +1,128 @@
+<div class="max-w-lg mx-auto">
+  <div class="bg-white rounded-lg shadow-lg p-6">
+    <h1 class="text-2xl font-bold mb-6 text-indigo-700">Redeem Points</h1>
+    
+    <div *ngIf="successMessage" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+      {{ successMessage }}
+    </div>
+    
+    <div *ngIf="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+      {{ errorMessage }}
+    </div>
+    
+    <form [formGroup]="redeemForm" (ngSubmit)="onSubmit()" class="space-y-4">
+      <!-- Customer Phone Number Field -->
+      <div>
+        <label for="customer_phone_number" class="block text-sm font-medium text-gray-700 mb-1">Customer Phone Number</label>
+        <div class="flex space-x-2">
+          <input 
+            type="tel" 
+            id="customer_phone_number" 
+            formControlName="customer_phone_number"
+            class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" 
+            placeholder="+1234567890"
+          >
+          <button 
+            type="button" 
+            (click)="lookupCustomer()"
+            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            [disabled]="!redeemForm.get('customer_phone_number')?.valid || isLookingUp"
+          >
+            <span *ngIf="isLookingUp">Looking up...</span>
+            <span *ngIf="!isLookingUp">Lookup</span>
+          </button>
+        </div>
+        <div *ngIf="redeemForm.get('customer_phone_number')?.touched && redeemForm.get('customer_phone_number')?.invalid" class="text-red-500 text-xs mt-1">
+          <div *ngIf="redeemForm.get('customer_phone_number')?.errors?.['required']">Phone number is required.</div>
+          <div *ngIf="redeemForm.get('customer_phone_number')?.errors?.['pattern']">Please enter a valid phone number (9-15 digits).</div>
+        </div>
+        <div *ngIf="lookupError" class="text-red-500 text-xs mt-1">{{ lookupError }}</div>
+        <p class="text-xs text-gray-500 mt-1">Format: Country code + number (e.g., +1234567890)</p>
+      </div>
+      
+      <!-- Customer Points Information -->
+      <div *ngIf="customerPoints" class="bg-gray-50 p-4 rounded-md">
+        <h3 class="font-medium text-gray-700">Customer Points</h3>
+        <p class="text-lg font-bold text-indigo-700">{{ customerPoints.total_points }} points available</p>
+        
+        <h4 class="font-medium text-gray-700 mt-3 mb-1">Recent Transactions</h4>
+        <div *ngIf="customerPoints.recent_transactions.length > 0" class="text-sm">
+          <div *ngFor="let transaction of customerPoints.recent_transactions" class="py-1 border-b border-gray-200 last:border-b-0">
+            <div class="flex justify-between items-center">
+              <div>
+                <span class="font-medium">{{ transaction.business_name }}</span>
+                <span *ngIf="transaction.transaction_type === 'redemption'" class="ml-2 text-red-600">(Redemption)</span>
+              </div>
+              <div>
+                <span [ngClass]="{'text-green-600': transaction.points_earned > 0, 'text-red-600': transaction.points_earned < 0}">
+                  {{ transaction.points_earned > 0 ? '+' : '' }}{{ transaction.points_earned }} pts
+                </span>
+              </div>
+            </div>
+            <div class="text-xs text-gray-500">
+              {{ transaction.timestamp | date:'medium' }}
+            </div>
+          </div>
+        </div>
+        <div *ngIf="customerPoints.recent_transactions.length === 0" class="text-sm text-gray-500">
+          No recent transactions.
+        </div>
+      </div>
+      
+      <!-- Points to Redeem Field -->
+      <div>
+        <label for="points_to_redeem" class="block text-sm font-medium text-gray-700 mb-1">Points to Redeem</label>
+        <input 
+          type="number" 
+          id="points_to_redeem" 
+          formControlName="points_to_redeem"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" 
+          [disabled]="!customerPoints"
+        >
+        <div *ngIf="redeemForm.get('points_to_redeem')?.touched && redeemForm.get('points_to_redeem')?.invalid" class="text-red-500 text-xs mt-1">
+          <div *ngIf="redeemForm.get('points_to_redeem')?.errors?.['required']">Points to redeem is required.</div>
+          <div *ngIf="redeemForm.get('points_to_redeem')?.errors?.['min']">Points to redeem must be at least 1.</div>
+          <div *ngIf="redeemForm.get('points_to_redeem')?.errors?.['max']">
+            Points to redeem cannot be more than available points ({{ customerPoints?.total_points }}).
+          </div>
+        </div>
+      </div>
+      
+      <!-- Reward Description Field -->
+      <div>
+        <label for="reward_description" class="block text-sm font-medium text-gray-700 mb-1">Reward Description</label>
+        <textarea 
+          id="reward_description" 
+          formControlName="reward_description"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" 
+          placeholder="e.g., $5 discount, Free coffee, etc."
+          rows="3"
+          [disabled]="!customerPoints"
+        ></textarea>
+        <div *ngIf="redeemForm.get('reward_description')?.touched && redeemForm.get('reward_description')?.invalid" class="text-red-500 text-xs mt-1">
+          <div *ngIf="redeemForm.get('reward_description')?.errors?.['required']">Reward description is required.</div>
+          <div *ngIf="redeemForm.get('reward_description')?.errors?.['minlength']">Reward description must be at least 3 characters.</div>
+        </div>
+      </div>
+      
+      <!-- Submit Button -->
+      <div class="pt-4">
+        <button 
+          type="submit" 
+          class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          [disabled]="redeemForm.invalid || isLoading || !customerPoints"
+          [ngClass]="{'opacity-70 cursor-not-allowed': redeemForm.invalid || isLoading || !customerPoints}"
+        >
+          <span *ngIf="isLoading">Processing...</span>
+          <span *ngIf="!isLoading">Redeem Points</span>
+        </button>
+      </div>
+    </form>
+    
+    <div class="mt-6">
+      <a routerLink="/dashboard" class="text-sm text-indigo-600 hover:text-indigo-500">
+        ← Back to Dashboard
+      </a>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,87 @@
+<div class="max-w-lg mx-auto">
+  <div class="bg-white rounded-lg shadow-lg p-6">
+    <h1 class="text-2xl font-bold mb-6 text-indigo-700">Customer Search</h1>
+    
+    <div *ngIf="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+      {{ errorMessage }}
+    </div>
+    
+    <form [formGroup]="searchForm" (ngSubmit)="onSubmit()" class="space-y-4">
+      <!-- Customer Phone Number Field -->
+      <div>
+        <label for="phone_number" class="block text-sm font-medium text-gray-700 mb-1">Customer Phone Number</label>
+        <div class="flex space-x-2">
+          <input 
+            type="tel" 
+            id="phone_number" 
+            formControlName="phone_number"
+            class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" 
+            placeholder="+1234567890"
+          >
+          <button 
+            type="submit" 
+            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            [disabled]="searchForm.invalid || isLoading"
+          >
+            <span *ngIf="isLoading">Searching...</span>
+            <span *ngIf="!isLoading">Search</span>
+          </button>
+        </div>
+        <div *ngIf="searchForm.get('phone_number')?.touched && searchForm.get('phone_number')?.invalid" class="text-red-500 text-xs mt-1">
+          <div *ngIf="searchForm.get('phone_number')?.errors?.['required']">Phone number is required.</div>
+          <div *ngIf="searchForm.get('phone_number')?.errors?.['pattern']">Please enter a valid phone number (9-15 digits).</div>
+        </div>
+        <p class="text-xs text-gray-500 mt-1">Format: Country code + number (e.g., +1234567890)</p>
+      </div>
+    </form>
+    
+    <!-- Customer Points Information -->
+    <div *ngIf="customerPoints" class="bg-gray-50 p-4 rounded-md mt-6">
+      <h3 class="font-medium text-gray-700">Customer Information</h3>
+      <p class="text-sm mt-2">
+        <span class="text-gray-600">Phone Number: </span>
+        <span class="font-medium">{{ searchForm.value.phone_number }}</span>
+      </p>
+      <p class="text-lg font-bold text-indigo-700 mt-2">
+        {{ customerPoints.total_points }} points available
+      </p>
+      
+      <h4 class="font-medium text-gray-700 mt-5 mb-2">Transaction History</h4>
+      <div *ngIf="customerPoints.recent_transactions.length > 0" class="text-sm divide-y divide-gray-200">
+        <div *ngFor="let transaction of customerPoints.recent_transactions" class="py-2">
+          <div class="flex justify-between items-center">
+            <div>
+              <span class="font-medium">{{ transaction.business_name }}</span>
+              <span *ngIf="transaction.transaction_type === 'redemption'" class="ml-2 text-red-600">(Redemption)</span>
+              <span *ngIf="transaction.reward_description" class="ml-2 italic text-gray-500">"{{ transaction.reward_description }}"</span>
+            </div>
+            <div>
+              <span [ngClass]="{'text-green-600': transaction.points_earned > 0, 'text-red-600': transaction.points_earned < 0}">
+                {{ transaction.points_earned > 0 ? '+' : '' }}{{ transaction.points_earned }} pts
+              </span>
+            </div>
+          </div>
+          <div class="flex justify-between text-xs text-gray-500 mt-1">
+            <div>{{ transaction.timestamp | date:'medium' }}</div>
+            <div *ngIf="transaction.amount_spent > 0">Amount: ${{ transaction.amount_spent | number:'1.2-2' }}</div>
+          </div>
+        </div>
+      </div>
+      <div *ngIf="customerPoints.recent_transactions.length === 0" class="text-sm text-gray-500">
+        No recent transactions.
+      </div>
+    </div>
+    
+    <div class="mt-6 flex space-x-4">
+      <a routerLink="/dashboard" class="text-sm text-indigo-600 hover:text-indigo-500">
+        ← Back to Dashboard
+      </a>
+      <a routerLink="/add-points" class="text-sm text-indigo-600 hover:text-indigo-500">
+        Add Points for Customer
+      </a>
+      <a routerLink="/redeem-points" class="text-sm text-indigo-600 hover:text-indigo-500">
+        Redeem Points for Customer
+      </a>
+    </div>
+  </div>
+</div>

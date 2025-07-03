@@ -1,0 +1,171 @@
+<div class="max-w-lg mx-auto">
+  <div class="bg-white rounded-lg shadow-lg p-6">
+    <h1 class="text-2xl font-bold mb-6 text-indigo-700">Add Points</h1>
+    
+    <div *ngIf="successMessage" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+      {{ successMessage }}
+    </div>
+    
+    <div *ngIf="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+      {{ errorMessage }}
+    </div>
+    
+    <form [formGroup]="addPointsForm" (ngSubmit)="onSubmit()" class="space-y-4">
+      <!-- Customer Phone Number Field -->
+      <div>
+        <label for="customer_phone_number" class="block text-sm font-medium text-gray-700 mb-1">Customer Phone Number</label>
+        <input 
+          type="tel" 
+          id="customer_phone_number" 
+          formControlName="customer_phone_number"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" 
+          placeholder="+1234567890"
+        >
+        <div *ngIf="addPointsForm.get('customer_phone_number')?.touched && addPointsForm.get('customer_phone_number')?.invalid" class="text-red-500 text-xs mt-1">
+          <div *ngIf="addPointsForm.get('customer_phone_number')?.errors?.['required']">Phone number is required.</div>
+          <div *ngIf="addPointsForm.get('customer_phone_number')?.errors?.['pattern']">Please enter a valid phone number (9-15 digits).</div>
+        </div>
+        <p class="text-xs text-gray-500 mt-1">Format: Country code + number (e.g., +1234567890)</p>
+      </div>
+      
+      <!-- Loyalty Program Selection -->
+      <div *ngIf="loyaltyPrograms.length > 0">
+        <label for="loyalty_program_id" class="block text-sm font-medium text-gray-700 mb-1">Loyalty Program</label>
+        <select
+          id="loyalty_program_id"
+          formControlName="loyalty_program_id"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+        >
+          <option [ngValue]="null">Default Program</option>
+          <option *ngFor="let program of loyaltyPrograms" [ngValue]="program.id">
+            {{ program.name }} ({{ getProgramTypeDisplay(program.program_type) }})
+          </option>
+        </select>
+        <p class="text-xs text-gray-500 mt-1">Select a specific loyalty program or use the default</p>
+      </div>
+
+      <!-- Amount Spent Field -->
+      <div>
+        <label for="amount_spent" class="block text-sm font-medium text-gray-700 mb-1">Amount Spent</label>
+        <div class="mt-1 relative rounded-md shadow-sm">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <span class="text-gray-500 sm:text-sm">$</span>
+          </div>
+          <input 
+            type="number" 
+            id="amount_spent" 
+            formControlName="amount_spent"
+            class="w-full pl-7 pr-12 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" 
+            step="0.01"
+            placeholder="0.00"
+          >
+        </div>
+        <div *ngIf="addPointsForm.get('amount_spent')?.touched && addPointsForm.get('amount_spent')?.invalid" class="text-red-500 text-xs mt-1">
+          <div *ngIf="addPointsForm.get('amount_spent')?.errors?.['required']">Amount is required.</div>
+          <div *ngIf="addPointsForm.get('amount_spent')?.errors?.['min']">Amount must be at least $0.01.</div>
+        </div>
+      </div>
+      
+      <!-- Rewards Preview -->
+      <div *ngIf="business" class="bg-gray-50 p-4 rounded-md mt-4">
+        <h3 class="font-medium text-gray-700">Rewards Calculation Preview</h3>
+        
+        <!-- Show program-specific details if a program is selected -->
+        <ng-container *ngIf="selectedProgram">
+          <p class="text-sm mt-2">
+            <span class="text-gray-600">Selected program: </span>
+            <span class="font-medium">{{ selectedProgram.name }} ({{ getProgramTypeDisplay(selectedProgram.program_type) }})</span>
+          </p>
+          
+          <ng-container [ngSwitch]="selectedProgram.program_type">
+            <!-- Points, Tiered, Paid programs -->
+            <ng-container *ngSwitchCase="programTypes.POINTS">
+              <p class="text-sm">
+                <span class="text-gray-600">Earn rate: </span>
+                <span class="font-medium">{{ selectedProgram.earn_rate }} points per dollar</span>
+              </p>
+              <p class="text-sm">
+                <span class="text-gray-600">Points to be earned: </span>
+                <span class="font-medium text-indigo-600">{{ pointsToBeEarned }} points</span>
+              </p>
+            </ng-container>
+            
+            <ng-container *ngSwitchCase="programTypes.TIERED">
+              <p class="text-sm">
+                <span class="text-gray-600">Base earn rate: </span>
+                <span class="font-medium">{{ selectedProgram.earn_rate }} points per dollar</span>
+              </p>
+              <p class="text-sm">
+                <span class="text-gray-600">Points to be earned: </span>
+                <span class="font-medium text-indigo-600">{{ pointsToBeEarned }} points</span>
+              </p>
+              <p class="text-xs text-gray-500">Note: Final points may vary based on customer's tier level</p>
+            </ng-container>
+            
+            <ng-container *ngSwitchCase="programTypes.PAID">
+              <p class="text-sm">
+                <span class="text-gray-600">Earn rate: </span>
+                <span class="font-medium">{{ selectedProgram.earn_rate }} points per dollar</span>
+              </p>
+              <p class="text-sm">
+                <span class="text-gray-600">Points to be earned: </span>
+                <span class="font-medium text-indigo-600">{{ pointsToBeEarned }} points</span>
+              </p>
+              <p class="text-xs text-gray-500">Note: Non-members earn half the points</p>
+            </ng-container>
+            
+            <!-- Cashback program -->
+            <ng-container *ngSwitchCase="programTypes.CASHBACK">
+              <p class="text-sm">
+                <span class="text-gray-600">Cashback rate: </span>
+                <span class="font-medium">{{ selectedProgram.earn_rate }}%</span>
+              </p>
+              <p class="text-sm">
+                <span class="text-gray-600">Cashback amount: </span>
+                <span class="font-medium text-green-600">${{ cashbackAmount }}</span>
+              </p>
+            </ng-container>
+            
+            <!-- Referral program -->
+            <ng-container *ngSwitchCase="programTypes.REFERRAL">
+              <p class="text-sm text-yellow-600">
+                Referral programs don't apply to regular transactions.
+              </p>
+            </ng-container>
+          </ng-container>
+        </ng-container>
+        
+        <!-- Show legacy calculation if no program is selected -->
+        <ng-container *ngIf="!selectedProgram">
+          <p class="text-sm mt-2">
+            <span class="text-gray-600">Using default loyalty rate: </span>
+            <span class="font-medium">{{ business.loyalty_rate }} points per dollar</span>
+          </p>
+          <p class="text-sm">
+            <span class="text-gray-600">Points to be earned: </span>
+            <span class="font-medium text-indigo-600">{{ pointsToBeEarned }} points</span>
+          </p>
+        </ng-container>
+      </div>
+      
+      <!-- Submit Button -->
+      <div class="pt-4">
+        <button 
+          type="submit" 
+          class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          [disabled]="addPointsForm.invalid || isLoading"
+          [ngClass]="{'opacity-70 cursor-not-allowed': addPointsForm.invalid || isLoading}"
+        >
+          <span *ngIf="isLoading">Processing...</span>
+          <span *ngIf="!isLoading">Add Points</span>
+        </button>
+      </div>
+    </form>
+    
+    <div class="mt-6">
+      <a routerLink="/dashboard" class="text-sm text-indigo-600 hover:text-indigo-500">
+        ← Back to Dashboard
+      </a>
+    </div>
+  </div>
+</div>

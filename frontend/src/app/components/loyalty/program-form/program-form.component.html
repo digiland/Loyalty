@@ -1,0 +1,290 @@
+<div class="container mx-auto px-4 py-6">
+  <div *ngIf="loading" class="text-center py-8">
+    <div class="inline-block animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
+    <p class="mt-2 text-gray-600">Loading...</p>
+  </div>
+
+  <ng-container *ngIf="!loading">
+    <h1 class="text-2xl font-bold mb-6">
+      {{ isEditMode ? 'Edit' : 'Create' }} {{ getTypeLabel(programType) }}
+    </h1>
+
+    <p class="mb-6 text-gray-600">{{ getTypeDescription(programType) }}</p>
+
+    <div *ngIf="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+      {{ error }}
+    </div>
+
+    <form [formGroup]="programForm" (ngSubmit)="onSubmit()" class="bg-white rounded shadow p-6">
+      <!-- Common fields for all program types -->
+      <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="name">
+          Program Name*
+        </label>
+        <input 
+          id="name" 
+          type="text" 
+          formControlName="name"
+          [ngClass]="getFormControlClass('name')"
+          class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          placeholder="Enter program name"
+        >
+        <p *ngIf="hasError('name', 'required')" class="text-red-500 text-xs italic">
+          Program name is required
+        </p>
+        <p *ngIf="hasError('name', 'maxlength')" class="text-red-500 text-xs italic">
+          Program name must be less than 100 characters
+        </p>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="description">
+          Description*
+        </label>
+        <textarea 
+          id="description" 
+          formControlName="description"
+          [ngClass]="getFormControlClass('description')"
+          class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          rows="3"
+          placeholder="Describe your loyalty program"
+        ></textarea>
+        <p *ngIf="hasError('description', 'required')" class="text-red-500 text-xs italic">
+          Description is required
+        </p>
+        <p *ngIf="hasError('description', 'maxlength')" class="text-red-500 text-xs italic">
+          Description must be less than 500 characters
+        </p>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="earn_rate">
+          {{ (programType === programTypes.CASHBACK) ? 'Cashback Percentage*' : (programType === programTypes.REFERRAL) ? 'Referral Points*' : 'Earn Rate (points per $)*' }}
+        </label>
+        <input 
+          id="earn_rate" 
+          type="number"
+          step="0.01"
+          min="0.01"
+          formControlName="earn_rate"
+          [ngClass]="getFormControlClass('earn_rate')"
+          class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+        >
+        <p *ngIf="hasError('earn_rate', 'required')" class="text-red-500 text-xs italic">
+          Earn rate is required
+        </p>
+        <p *ngIf="hasError('earn_rate', 'min')" class="text-red-500 text-xs italic">
+          Earn rate must be greater than 0
+        </p>
+      </div>
+
+      <!-- Tiered Program specific fields -->
+      <ng-container *ngIf="programType === programTypes.TIERED">
+        <div class="mb-6">
+          <div class="flex justify-between items-center mb-2">
+            <h3 class="font-bold">Tier Levels</h3>
+            <button 
+              type="button" 
+              (click)="addTierLevel()"
+              class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm">
+              Add Tier
+            </button>
+          </div>
+
+          <div formArrayName="tier_levels">
+            <div *ngFor="let tier of tierLevels.controls; let i = index" [formGroupName]="i" 
+                class="bg-gray-50 p-4 mb-4 rounded border border-gray-200">
+              <div class="flex justify-between items-center mb-3">
+                <h4 class="font-semibold">Tier {{ i + 1 }}</h4>
+                <button 
+                  *ngIf="tierLevels.length > 1"
+                  type="button" 
+                  (click)="removeTierLevel(i)"
+                  class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-xs">
+                  Remove
+                </button>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-gray-700 text-sm font-bold mb-2">
+                    Tier Name*
+                  </label>
+                  <input 
+                    type="text" 
+                    formControlName="name"
+                    [ngClass]="getFormControlClass('name', 'tier_levels', i)"
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  >
+                  <p *ngIf="hasError('name', 'required', 'tier_levels', i)" class="text-red-500 text-xs italic">
+                    Tier name is required
+                  </p>
+                </div>
+
+                <div>
+                  <label class="block text-gray-700 text-sm font-bold mb-2">
+                    Minimum Points Required*
+                  </label>
+                  <input 
+                    type="number"
+                    min="0" 
+                    formControlName="min_points"
+                    [ngClass]="getFormControlClass('min_points', 'tier_levels', i)"
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  >
+                  <p *ngIf="hasError('min_points', 'required', 'tier_levels', i)" class="text-red-500 text-xs italic">
+                    Minimum points is required
+                  </p>
+                  <p *ngIf="hasError('min_points', 'min', 'tier_levels', i)" class="text-red-500 text-xs italic">
+                    Minimum points must be at least 0
+                  </p>
+                </div>
+
+                <div>
+                  <label class="block text-gray-700 text-sm font-bold mb-2">
+                    Points Multiplier*
+                  </label>
+                  <input 
+                    type="number"
+                    step="0.1"
+                    min="1" 
+                    formControlName="multiplier"
+                    [ngClass]="getFormControlClass('multiplier', 'tier_levels', i)"
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  >
+                  <p *ngIf="hasError('multiplier', 'required', 'tier_levels', i)" class="text-red-500 text-xs italic">
+                    Multiplier is required
+                  </p>
+                  <p *ngIf="hasError('multiplier', 'min', 'tier_levels', i)" class="text-red-500 text-xs italic">
+                    Multiplier must be at least 1
+                  </p>
+                </div>
+
+                <div class="md:col-span-2">
+                  <label class="block text-gray-700 text-sm font-bold mb-2">
+                    Tier Benefits*
+                  </label>
+                  <textarea 
+                    formControlName="benefits"
+                    [ngClass]="getFormControlClass('benefits', 'tier_levels', i)"
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    rows="2"
+                  ></textarea>
+                  <p *ngIf="hasError('benefits', 'required', 'tier_levels', i)" class="text-red-500 text-xs italic">
+                    Benefits description is required
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Paid Membership specific fields -->
+      <ng-container *ngIf="programType === programTypes.PAID">
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="membership_fee">
+            Membership Fee ($)*
+          </label>
+          <input 
+            id="membership_fee" 
+            type="number"
+            step="0.01"
+            min="0.01"
+            formControlName="membership_fee"
+            [ngClass]="getFormControlClass('membership_fee')"
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          >
+          <p *ngIf="hasError('membership_fee', 'required')" class="text-red-500 text-xs italic">
+            Membership fee is required
+          </p>
+          <p *ngIf="hasError('membership_fee', 'min')" class="text-red-500 text-xs italic">
+            Membership fee must be greater than 0
+          </p>
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="membership_period_days">
+            Membership Period (days)*
+          </label>
+          <input 
+            id="membership_period_days" 
+            type="number"
+            min="1"
+            formControlName="membership_period_days"
+            [ngClass]="getFormControlClass('membership_period_days')"
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          >
+          <p *ngIf="hasError('membership_period_days', 'required')" class="text-red-500 text-xs italic">
+            Membership period is required
+          </p>
+          <p *ngIf="hasError('membership_period_days', 'min')" class="text-red-500 text-xs italic">
+            Membership period must be at least 1 day
+          </p>
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="membership_benefits">
+            Membership Benefits*
+          </label>
+          <textarea 
+            id="membership_benefits" 
+            formControlName="membership_benefits"
+            [ngClass]="getFormControlClass('membership_benefits')"
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            rows="4"
+            placeholder="List the benefits members receive"
+          ></textarea>
+          <p *ngIf="hasError('membership_benefits', 'required')" class="text-red-500 text-xs italic">
+            Membership benefits are required
+          </p>
+        </div>
+      </ng-container>
+
+      <!-- Referral Program specific description -->
+      <ng-container *ngIf="programType === programTypes.REFERRAL">
+        <div class="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <h3 class="font-bold text-blue-800 mb-2">Referral Program</h3>
+          <p class="text-blue-700">
+            The earn rate for referral programs determines how many points a customer receives when they refer someone.
+            You can configure additional referral options in the program settings after creation.
+          </p>
+        </div>
+      </ng-container>
+
+      <!-- Cashback Program specific description -->
+      <ng-container *ngIf="programType === programTypes.CASHBACK">
+        <div class="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
+          <h3 class="font-bold text-green-800 mb-2">Cashback Program</h3>
+          <p class="text-green-700">
+            The earn rate for cashback programs is the percentage of each purchase amount that customers receive back.
+            For example, an earn rate of 2.0 means customers get 2% of their purchase back as cashback.
+          </p>
+        </div>
+      </ng-container>
+
+      <!-- Active status -->
+      <div class="mb-6">
+        <label class="inline-flex items-center">
+          <input type="checkbox" formControlName="active" class="form-checkbox h-5 w-5 text-blue-600">
+          <span class="ml-2 text-gray-700">Program Active</span>
+        </label>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <button 
+          type="submit" 
+          [disabled]="loading"
+          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+          {{ isEditMode === true ? 'Update Program' : 'Create Program' }}
+        </button>
+        <button 
+          type="button" 
+          [routerLink]="['/loyalty-programs']"
+          class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </ng-container>
+</div>

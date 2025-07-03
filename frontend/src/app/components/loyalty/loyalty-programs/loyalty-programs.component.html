@@ -1,0 +1,107 @@
+<div class="container mx-auto px-4 py-6">
+  <h1 class="text-2xl font-bold mb-6">Loyalty Programs</h1>
+
+  <div *ngIf="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+    {{ error }}
+  </div>
+
+  <div class="mb-6">
+    <h2 class="text-xl font-semibold mb-3">Create New Loyalty Program</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div class="bg-white rounded shadow p-4 border-l-4 border-blue-500 hover:shadow-lg transition-shadow cursor-pointer"
+        (click)="createNewProgram(programTypes.POINTS)">
+        <h3 class="font-bold">Points Program</h3>
+        <p class="text-sm text-gray-600">Basic points for purchases</p>
+      </div>
+
+      <div class="bg-white rounded shadow p-4 border-l-4 border-purple-500 hover:shadow-lg transition-shadow cursor-pointer"
+        (click)="createNewProgram(programTypes.TIERED)">
+        <h3 class="font-bold">Tiered Program</h3>
+        <p class="text-sm text-gray-600">Multiple levels with increasing benefits</p>
+      </div>
+
+      <div class="bg-white rounded shadow p-4 border-l-4 border-green-500 hover:shadow-lg transition-shadow cursor-pointer"
+        (click)="createNewProgram(programTypes.PAID)">
+        <h3 class="font-bold">Paid Membership</h3>
+        <p class="text-sm text-gray-600">Premium benefits for paying customers</p>
+      </div>
+
+      <div class="bg-white rounded shadow p-4 border-l-4 border-yellow-500 hover:shadow-lg transition-shadow cursor-pointer"
+        (click)="createNewProgram(programTypes.REFERRAL)">
+        <h3 class="font-bold">Referral Program</h3>
+        <p class="text-sm text-gray-600">Rewards for customer referrals</p>
+      </div>
+
+      <div class="bg-white rounded shadow p-4 border-l-4 border-red-500 hover:shadow-lg transition-shadow cursor-pointer"
+        (click)="createNewProgram(programTypes.CASHBACK)">
+        <h3 class="font-bold">Cashback Program</h3>
+        <p class="text-sm text-gray-600">Direct cash rewards on purchases</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-8">
+    <h2 class="text-xl font-semibold mb-3">Your Loyalty Programs</h2>
+    
+    <div *ngIf="loading" class="text-center py-4">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+      <p class="mt-2 text-gray-600">Loading programs...</p>
+    </div>
+
+    <div *ngIf="!loading && loyaltyPrograms.length === 0" class="text-center py-8 bg-gray-50 rounded">
+      <p class="text-gray-500">You don't have any loyalty programs yet. Create one above!</p>
+    </div>
+
+    <div *ngIf="!loading && loyaltyPrograms.length > 0" class="bg-white rounded shadow overflow-x-auto">
+      <table class="min-w-full">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="py-3 px-4 text-left">Name</th>
+            <th class="py-3 px-4 text-left">Type</th>
+            <th class="py-3 px-4 text-left">Details</th>
+            <th class="py-3 px-4 text-left">Status</th>
+            <th class="py-3 px-4 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let program of loyaltyPrograms" class="border-t border-gray-200">
+            <td class="py-3 px-4">
+              <div class="font-medium">{{ program.name }}</div>
+              <div class="text-sm text-gray-600">{{ program.description }}</div>
+            </td>
+            <td class="py-3 px-4">
+              <span [ngClass]="{
+                'bg-blue-100 text-blue-800': program.program_type === programTypes.POINTS,
+                'bg-purple-100 text-purple-800': program.program_type === programTypes.TIERED,
+                'bg-green-100 text-green-800': program.program_type === programTypes.PAID,
+                'bg-yellow-100 text-yellow-800': program.program_type === programTypes.REFERRAL,
+                'bg-red-100 text-red-800': program.program_type === programTypes.CASHBACK
+              }" class="px-2 py-1 text-xs rounded-full">
+                {{ getProgramTypeDisplay(program.program_type) }}
+              </span>
+            </td>
+            <td class="py-3 px-4">
+              {{ getProgramSpecificDetails(program) }}
+            </td>
+            <td class="py-3 px-4">
+              <span [ngClass]="program.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'" 
+                class="px-2 py-1 text-xs rounded-full">
+                {{ program.active ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+            <td class="py-3 px-4 text-right">
+              <button (click)="editProgram(program)" 
+                class="text-blue-600 hover:text-blue-800 mr-2">Edit</button>
+              <button (click)="toggleProgramStatus(program)" 
+                class="text-yellow-600 hover:text-yellow-800 mr-2">
+                {{ program.active ? 'Deactivate' : 'Activate' }}
+              </button>
+              <button (click)="deleteProgram(program)" 
+                class="text-red-600 hover:text-red-800">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

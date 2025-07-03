@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loyalty Platform - Check Your Points</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <header class="bg-indigo-600 text-white py-6">
+        <div class="container mx-auto px-4">
+            <h1 class="text-3xl font-bold">Multi-Business Loyalty Platform</h1>
+            <p class="mt-2">Check your rewards points and recent transactions</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8 flex-grow">
+        <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold mb-6 text-indigo-700">Check Your Points</h2>
+            
+            <div id="errorMessage" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"></div>
+            
+            <form id="checkPointsForm" class="space-y-4">
+                <div>
+                    <label for="phone_number" class="block text-sm font-medium text-gray-700 mb-1">Your Phone Number</label>
+                    <input 
+                        type="tel" 
+                        id="phone_number" 
+                        name="phone_number"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" 
+                        placeholder="+1234567890"
+                        required
+                        pattern="^\+?\d{9,15}$"
+                    >
+                    <p class="text-xs text-gray-500 mt-1">Format: Country code + number (e.g., +1234567890)</p>
+                </div>
+                
+                <div>
+                    <button 
+                        type="submit" 
+                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                        Check Points
+                    </button>
+                </div>
+            </form>
+            
+            <div id="resultsSection" class="hidden mt-8">
+                <div class="bg-gray-50 p-4 rounded-md">
+                    <h3 class="font-medium text-gray-700">Your Points Balance</h3>
+                    <p id="totalPoints" class="text-2xl font-bold text-indigo-700 mt-2">0 points</p>
+                    
+                    <h4 class="font-medium text-gray-700 mt-5 mb-2">Recent Transactions</h4>
+                    <div id="transactionsContainer" class="text-sm divide-y divide-gray-200">
+                        <!-- Transactions will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-6">
+        <div class="container mx-auto px-4 text-center">
+            <p>© 2025 Multi-Business Loyalty Platform</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const apiUrl = 'http://localhost:8000'; // Change this to your API URL
+            const form = document.getElementById('checkPointsForm');
+            const errorMessage = document.getElementById('errorMessage');
+            const resultsSection = document.getElementById('resultsSection');
+            const totalPoints = document.getElementById('totalPoints');
+            const transactionsContainer = document.getElementById('transactionsContainer');
+            
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const phoneNumber = document.getElementById('phone_number').value;
+                
+                // Hide previous results and errors
+                errorMessage.classList.add('hidden');
+                resultsSection.classList.add('hidden');
+                
+                // Validate phone number
+                if (!phoneNumber.match(/^\+?\d{9,15}$/)) {
+                    showError('Please enter a valid phone number (9-15 digits).');
+                    return;
+                }
+                
+                // Fetch customer points
+                fetch(`${apiUrl}/customers/points/${phoneNumber}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Customer not found or has no points.');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Display results
+                        totalPoints.textContent = `${data.total_points} points`;
+                        
+                        // Clear previous transactions
+                        transactionsContainer.innerHTML = '';
+                        
+                        if (data.recent_transactions && data.recent_transactions.length > 0) {
+                            // Add transaction items
+                            data.recent_transactions.forEach(transaction => {
+                                const item = document.createElement('div');
+                                item.className = 'py-2';
+                                
+                                const isRedemption = transaction.transaction_type === 'redemption';
+                                const pointsClass = transaction.points_earned > 0 ? 'text-green-600' : 'text-red-600';
+                                
+                                item.innerHTML = `
+                                    <div class="flex justify-between items-center">
+                                        <div>
+                                            <span class="font-medium">${transaction.business_name}</span>
+                                            ${isRedemption ? '<span class="ml-2 text-red-600">(Redemption)</span>' : ''}
+                                            ${transaction.reward_description ? `<span class="ml-2 italic text-gray-500">"${transaction.reward_description}"</span>` : ''}
+                                        </div>
+                                        <div>
+                                            <span class="${pointsClass}">
+                                                ${transaction.points_earned > 0 ? '+' : ''}${transaction.points_earned} pts
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                        <div>${new Date(transaction.timestamp).toLocaleString()}</div>
+                                        ${transaction.amount_spent > 0 ? `<div>Amount: $${transaction.amount_spent.toFixed(2)}</div>` : ''}
+                                    </div>
+                                `;
+                                
+                                transactionsContainer.appendChild(item);
+                            });
+                        } else {
+                            // No transactions
+                            transactionsContainer.innerHTML = '<p class="text-gray-500">No recent transactions.</p>';
+                        }
+                        
+                        // Show results section
+                        resultsSection.classList.remove('hidden');
+                    })
+                    .catch(error => {
+                        showError(error.message);
+                    });
+            });
+            
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

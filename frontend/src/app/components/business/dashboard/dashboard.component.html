@@ -1,0 +1,105 @@
+<div class="max-w-4xl mx-auto">
+  <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+    <h1 class="text-2xl font-bold mb-6 text-indigo-700">Business Dashboard</h1>
+    
+    <div *ngIf="business" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-gray-50 p-4 rounded-md">
+        <h2 class="text-lg font-semibold mb-3">Business Information</h2>
+        <div class="space-y-2">
+          <div>
+            <span class="text-gray-600">Business Name:</span>
+            <span class="ml-2 font-medium">{{ business.name }}</span>
+          </div>
+          <div>
+            <span class="text-gray-600">Email:</span>
+            <span class="ml-2">{{ business.email }}</span>
+          </div>
+          <div *ngIf="business.contact_person">
+            <span class="text-gray-600">Contact Person:</span>
+            <span class="ml-2">{{ business.contact_person }}</span>
+          </div>
+          <div>
+            <span class="text-gray-600">Member Since:</span>
+            <span class="ml-2">{{ business.created_at | date:'mediumDate' }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-gray-50 p-4 rounded-md">
+        <h2 class="text-lg font-semibold mb-3">Loyalty Program Settings</h2>
+        
+        <div *ngIf="successMessage" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+          {{ successMessage }}
+        </div>
+        
+        <div *ngIf="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {{ errorMessage }}
+        </div>
+        
+        <form [formGroup]="loyaltyForm" (ngSubmit)="updateLoyaltyRate()">
+          <div class="mb-4">
+            <label for="loyalty_rate" class="block text-sm font-medium text-gray-700 mb-1">
+              Loyalty Rate (points per currency unit)
+            </label>
+            <div class="flex items-center">
+              <input 
+                type="number" 
+                id="loyalty_rate" 
+                formControlName="loyalty_rate"
+                step="0.1"
+                class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" 
+              >
+              <button 
+                type="submit" 
+                class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                [disabled]="loyaltyForm.invalid || isLoading"
+              >
+                <span *ngIf="isLoading">Updating...</span>
+                <span *ngIf="!isLoading">Update</span>
+              </button>
+            </div>
+            <div *ngIf="loyaltyForm.get('loyalty_rate')?.touched && loyaltyForm.get('loyalty_rate')?.invalid" class="text-red-500 text-xs mt-1">
+              <div *ngIf="loyaltyForm.get('loyalty_rate')?.errors?.['required']">Loyalty rate is required.</div>
+              <div *ngIf="loyaltyForm.get('loyalty_rate')?.errors?.['min']">Loyalty rate must be at least 0.1.</div>
+            </div>
+            <p class="text-sm text-gray-500 mt-2">
+              <strong>Current rate:</strong> {{ business.loyalty_rate }} points per currency unit.
+              <br>
+              <em>Example: $10 spent = {{ 10 * business.loyalty_rate | number:'1.0-0' }} points earned</em>
+            </p>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <div class="mt-6 flex space-x-4">
+      <a routerLink="/add-points" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
+        </svg>
+        Add Points
+      </a>
+      <a routerLink="/redeem-points" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zm7-10a1 1 0 01.707.293l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L13.586 9H10a1 1 0 110-2h3.586l-2.293-2.293A1 1 0 0112 2z" clip-rule="evenodd" />
+        </svg>
+        Redeem Points
+      </a>
+      <a routerLink="/customers" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd" />
+        </svg>
+        Manage Customers
+      </a>
+    </div>
+  </div>
+
+  <!-- Quick Stats - Placeholder for future enhancements -->
+  <div class="bg-white rounded-lg shadow-lg p-6">
+    <h2 class="text-xl font-semibold mb-4 text-indigo-700">Quick Stats</h2>
+    <p class="text-gray-500 italic">
+      More detailed statistics will be available in future updates. This will include total points issued, 
+      redemptions, and customer counts.
+    </p>
+  </div>
+</div>
