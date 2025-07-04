@@ -4,13 +4,60 @@ class LoyaltyApp {
         this.apiUrl = 'http://localhost:8000';
         this.currentPhoneNumber = null;
         this.chatHistory = [];
+        this.sessionId = this.generateSessionId();
+        this.geminiEnabled = false;
+        this.availableRewards = [];
+        this.selectedReward = null;
         this.init();
     }
 
-    init() {
+    generateSessionId() {
+        return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    async init() {
         this.setupEventListeners();
         this.setupChatWidget();
         this.loadWelcomeMessage();
+        
+        // Check if Gemini AI is enabled
+        await this.checkGeminiStatus();
+    }
+
+    async checkGeminiStatus() {
+        try {
+            const response = await fetch('/api/config');
+            const config = await response.json();
+            
+            this.geminiEnabled = config.geminiEnabled;
+            
+            if (config.geminiEnabled) {
+                console.log('✅ Gemini AI assistant is enabled');
+                this.updateChatStatus('🤖 AI Assistant Ready', 'Connected to Gemini 2.5 Flash');
+            } else {
+                console.log('⚠️ Gemini AI assistant is not configured');
+                this.updateChatStatus('🔧 Basic Assistant', 'Configure Gemini API key for enhanced AI');
+            }
+        } catch (error) {
+            console.error('Error checking Gemini status:', error);
+            this.updateChatStatus('⚠️ Assistant Limited', 'Network connection issues');
+        }
+    }
+
+    updateChatStatus(title, subtitle) {
+        // Update the chat header to show AI status
+        const chatHeader = document.querySelector('#chatWidget .gradient-bg h4');
+        if (chatHeader) {
+            chatHeader.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-robot text-xl mr-2"></i>
+                    <div>
+                        <div class="font-semibold">${title}</div>
+                        <div class="text-xs opacity-75">${subtitle}</div>
+                    </div>
+                </div>
+            `;
+        }
     }
 
     setupEventListeners() {
@@ -44,6 +91,26 @@ class LoyaltyApp {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 this.checkPoints();
+            }
+        });
+
+        // Reward modal event listeners
+        document.getElementById('closeRewardModal').addEventListener('click', () => {
+            this.closeRewardModal();
+        });
+
+        document.getElementById('cancelRedemption').addEventListener('click', () => {
+            this.closeRewardModal();
+        });
+
+        document.getElementById('confirmRedemption').addEventListener('click', () => {
+            this.confirmRewardRedemption();
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('rewardModal').addEventListener('click', (e) => {
+            if (e.target.id === 'rewardModal') {
+                this.closeRewardModal();
             }
         });
     }
@@ -92,6 +159,7 @@ class LoyaltyApp {
             this.currentPhoneNumber = phoneNumber;
             this.displayResults(data);
             await this.loadRecommendations(phoneNumber);
+            await this.loadAvailableRewards(phoneNumber);
             
         } catch (error) {
             this.showError(error.message);
@@ -256,9 +324,185 @@ class LoyaltyApp {
         });
     }
 
+    // Reward functionality
+    async loadAvailableRewards(phoneNumber) {
+        try {
+            const response = await fetch(`${this.apiUrl}/customers/available-rewards/${phoneNumber}`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                this.availableRewards = data;
+                this.displayAvailableRewards(data);
+            }
+        } catch (error) {
+            console.error('Error loading available rewards:', error);
+        }
+    }
+
+    displayAvailableRewards(rewards) {
+        const container = document.getElementById('rewardsContainer');
+        container.innerHTML = '';
+        
+        if (!rewards || rewards.length === 0) {
+            container.innerHTML = `
+                <div class="text-center text-gray-500 py-4">
+                    <i class="fas fa-gift text-xl mb-2"></i>
+                    <p>No rewards available at this time.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        rewards.forEach(availableReward => {
+            const div = document.createElement('div');
+            const canRedeem = availableReward.customer_points >= availableReward.reward.points_required;
+            
+            div.className = `bg-gradient-to-r ${canRedeem ? 'from-green-50 to-blue-50 border-green-200' : 'from-gray-50 to-red-50 border-red-200'} p-3 rounded-lg border-l-4 transition-all hover:shadow-md`;
+            div.innerHTML = `
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <div class="flex items-center mb-1">
+                            <i class="fas fa-gift ${canRedeem ? 'text-green-600' : 'text-gray-400'} text-sm mr-2"></i>
+                            <h4 class="font-semibold text-gray-800 text-sm">${availableReward.reward.name}</h4>
+                        </div>
+                        <p class="text-xs text-gray-600 mb-2">${availableReward.reward.description}</p>
+                        <div class="text-xs text-gray-500">
+                            <span class="font-semibold text-blue-600">${availableReward.reward.points_required} pts</span>
+                            <span class="mx-1">•</span>
+                            <span class="${canRedeem ? 'text-green-600' : 'text-red-600'}">
+                                You have: ${availableReward.customer_points} pts
+                            </span>
+                        </div>
+                    </div>
+                    <button 
+                        onclick="loyaltyApp.openRewardModal(${JSON.stringify(availableReward).replace(/"/g, '&quot;')})"
+                        class="ml-2 px-3 py-1 text-xs rounded-full transition-all ${canRedeem ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}"
+                        ${!canRedeem ? 'disabled' : ''}
+                    >
+                        ${canRedeem ? 'Redeem' : 'Insufficient'}
+                    </button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    openRewardModal(availableReward) {
+        this.selectedReward = availableReward;
+        const modal = document.getElementById('rewardModal');
+        const rewardDetails = document.getElementById('rewardDetails');
+        
+        rewardDetails.innerHTML = `
+            <div class="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border">
+                <h4 class="font-semibold text-gray-800 mb-2">${availableReward.reward.name}</h4>
+                <p class="text-sm text-gray-600 mb-3">${availableReward.reward.description}</p>
+                <div class="flex justify-between items-center text-sm">
+                    <span class="text-blue-600 font-semibold">${availableReward.reward.points_required} points required</span>
+                    <span class="text-green-600 font-semibold">You have: ${availableReward.customer_points} points</span>
+                </div>
+                <div class="mt-3 p-2 bg-yellow-50 rounded border border-yellow-200">
+                    <p class="text-xs text-yellow-800">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                        This will deduct ${availableReward.reward.points_required} points from your account.
+                    </p>
+                </div>
+            </div>
+        `;
+        
+        modal.classList.remove('hidden');
+    }
+
+    closeRewardModal() {
+        const modal = document.getElementById('rewardModal');
+        modal.classList.add('hidden');
+        this.selectedReward = null;
+    }
+
+    async confirmRewardRedemption() {
+        if (!this.selectedReward || !this.currentPhoneNumber) {
+            return;
+        }
+
+        // Show loading state
+        const confirmButton = document.getElementById('confirmRedemption');
+        confirmButton.disabled = true;
+        confirmButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+
+        try {
+            const response = await fetch(`${this.apiUrl}/customers/redeem-reward`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    customer_phone_number: this.currentPhoneNumber,
+                    points_to_redeem: this.selectedReward.reward.points_required,
+                    reward_description: this.selectedReward.reward.name,
+                    loyalty_program_id: this.selectedReward.reward.loyalty_program_id
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Success - close modal and show success message
+                this.closeRewardModal();
+                this.showSuccessMessage(`Successfully redeemed ${this.selectedReward.reward.name}!`);
+                
+                // Refresh the data
+                await this.checkPoints();
+                
+                // Add to chat
+                this.addChatMessage(`🎉 Great news! You've successfully redeemed "${this.selectedReward.reward.name}" for ${this.selectedReward.reward.points_required} points!`, 'assistant');
+            } else {
+                throw new Error(data.detail || 'Failed to redeem reward');
+            }
+        } catch (error) {
+            console.error('Error redeeming reward:', error);
+            this.showError('Failed to redeem reward: ' + error.message);
+        } finally {
+            // Reset button state
+            confirmButton.disabled = false;
+            confirmButton.innerHTML = '<i class="fas fa-check mr-2"></i>Confirm Redemption';
+        }
+    }
+
+    showSuccessMessage(message) {
+        // Create a success message element
+        const successDiv = document.createElement('div');
+        successDiv.className = 'fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg shadow-lg z-50';
+        successDiv.innerHTML = `
+            <div class="flex items-center">
+                <i class="fas fa-check-circle mr-2"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(successDiv);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (successDiv.parentNode) {
+                successDiv.parentNode.removeChild(successDiv);
+            }
+        }, 5000);
+    }
+
     // Chat functionality
     loadWelcomeMessage() {
-        // Already loaded in HTML
+        // Add enhanced welcome message
+        const welcomeMessage = this.geminiEnabled 
+            ? '👋 Hi! I\'m your AI-powered loyalty assistant. I can help you check points, get recommendations, redeem rewards, learn about referrals, and answer questions about our loyalty program!'
+            : '👋 Hi! I\'m your loyalty assistant. Ask me about your points, rewards, or referrals!';
+        
+        this.addChatMessage(welcomeMessage, 'assistant');
+        
+        // Add some example queries
+        if (this.geminiEnabled) {
+            setTimeout(() => {
+                this.addChatMessage('💡 Try asking me:\n• "How many points do I have for +1234567890?"\n• "What rewards can I redeem?"\n• "What are my recent transactions?"\n• "Any recommendations for me?"\n• "How do referrals work?"', 'assistant');
+            }, 1000);
+        }
     }
 
     async sendChatMessage() {
@@ -275,18 +519,40 @@ class LoyaltyApp {
         this.showTypingIndicator(true);
         
         try {
-            // Process the message with our LLM-powered assistant
-            const response = await this.processLLMQuery(message);
+            // Use the new MCP API endpoint
+            const response = await fetch('/api/mcp-chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    sessionId: this.sessionId,
+                    context: {
+                        phone_number: this.currentPhoneNumber || null
+                    }
+                })
+            });
+            
+            const data = await response.json();
             
             // Hide typing indicator
             this.showTypingIndicator(false);
             
-            // Add assistant response
-            this.addChatMessage(response, 'assistant');
+            if (data.success) {
+                // Add assistant response
+                this.addChatMessage(data.response, 'assistant');
+                this.sessionId = data.sessionId || this.sessionId; // Update session ID if provided
+                if (data.context && data.context.phone_number) {
+                    this.currentPhoneNumber = data.context.phone_number;
+                }
+            } else {
+                this.addChatMessage(data.error || 'Sorry, I encountered an error. Please try again later.', 'assistant');
+            }
             
         } catch (error) {
             this.showTypingIndicator(false);
-            this.addChatMessage('Sorry, I encountered an error. Please try again later.', 'assistant');
+            this.addChatMessage('Sorry, I encountered an error connecting to the chat service. Please try again later.', 'assistant');
         }
     }
 
@@ -323,144 +589,11 @@ class LoyaltyApp {
             typingIndicator.classList.add('hidden');
         }
     }
-
-    async processLLMQuery(query) {
-        // This is where we implement the LLM-powered conversational assistant
-        // For now, we'll use rule-based responses that can query the API
-        
-        const lowerQuery = query.toLowerCase();
-        
-        // Points-related queries
-        if (lowerQuery.includes('points') || lowerQuery.includes('balance')) {
-            return await this.handlePointsQuery(query);
-        }
-        
-        // Transactions-related queries
-        if (lowerQuery.includes('transaction') || lowerQuery.includes('history') || lowerQuery.includes('recent')) {
-            return await this.handleTransactionsQuery(query);
-        }
-        
-        // Recommendations-related queries
-        if (lowerQuery.includes('recommend') || lowerQuery.includes('suggest') || lowerQuery.includes('offer')) {
-            return await this.handleRecommendationsQuery(query);
-        }
-        
-        // Referrals-related queries
-        if (lowerQuery.includes('referral') || lowerQuery.includes('refer') || lowerQuery.includes('friend')) {
-            return await this.handleReferralQuery(query);
-        }
-        
-        // General help
-        if (lowerQuery.includes('help') || lowerQuery.includes('what can you do')) {
-            return this.getHelpMessage();
-        }
-        
-        // Default response with context-aware suggestions
-        return this.getContextualResponse(query);
-    }
-
-    async handlePointsQuery(query) {
-        const phoneRegex = /(\+?\d{9,15})/;
-        const phoneMatch = query.match(phoneRegex);
-        
-        if (phoneMatch) {
-            const phoneNumber = phoneMatch[1];
-            try {
-                const response = await fetch(`${this.apiUrl}/customers/points/${phoneNumber}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    return `📊 You have ${data.total_points.toLocaleString()} points! ${data.total_points > 100 ? '🎉 You\'re doing great!' : '💪 Keep earning to unlock more rewards!'}`;
-                }
-            } catch (error) {
-                return '❌ Sorry, I couldn\'t find that phone number in our system. Please check your number and try again.';
-            }
-        }
-        
-        if (this.currentPhoneNumber) {
-            const totalPoints = document.getElementById('totalPoints').textContent;
-            return `📊 Based on your current lookup, you have ${totalPoints} points! Would you like me to check for any new recommendations?`;
-        }
-        
-        return '📱 To check your points, please provide your phone number or use the form above to look up your balance.';
-    }
-
-    async handleTransactionsQuery(query) {
-        if (!this.currentPhoneNumber) {
-            return '📱 Please first check your points using your phone number, then I can help you with your transaction history.';
-        }
-        
-        const transactionsContainer = document.getElementById('transactionsContainer');
-        const transactions = transactionsContainer.children.length;
-        
-        if (transactions === 0) {
-            return '📝 You don\'t have any recent transactions. Start shopping at our partner businesses to earn points!';
-        }
-        
-        return `📝 You have ${transactions} recent transactions. Your latest activity shows both points earned and redeemed. Check the main panel for detailed transaction history!`;
-    }
-
-    async handleRecommendationsQuery(query) {
-        if (!this.currentPhoneNumber) {
-            return '📱 Please first check your points using your phone number, then I can provide personalized recommendations.';
-        }
-        
-        try {
-            const response = await fetch(`${this.apiUrl}/customers/recommendations/${this.currentPhoneNumber}`);
-            if (response.ok) {
-                const data = await response.json();
-                if (data.recommendations && data.recommendations.length > 0) {
-                    const topRecommendation = data.recommendations[0];
-                    return `💡 Here's a personalized recommendation for you: ${topRecommendation}\n\nCheck the recommendations panel for more suggestions!`;
-                }
-            }
-        } catch (error) {
-            console.error('Error fetching recommendations:', error);
-        }
-        
-        return '💡 I don\'t have specific recommendations right now, but keep earning points and I\'ll have personalized suggestions for you!';
-    }
-
-    async handleReferralQuery(query) {
-        if (query.toLowerCase().includes('how') || query.toLowerCase().includes('work')) {
-            return '👥 Referrals are easy! When you refer a friend:\n1. They mention your phone number when they first shop\n2. You both earn bonus points!\n3. Help your friends discover great local businesses\n\nSpread the word and earn together! 🎉';
-        }
-        
-        return '👥 Want to refer friends? Just ask them to mention your phone number when they make their first purchase at any partner business. You\'ll both earn bonus points! 🎉';
-    }
-
-    getHelpMessage() {
-        return `🤖 I'm your loyalty assistant! I can help you with:
-
-📊 Check your points balance
-📝 Review transaction history  
-💡 Get personalized recommendations
-👥 Learn about referral programs
-🎁 Find available rewards
-
-Just ask me naturally! For example:
-"How many points do I have?"
-"What are my recent transactions?"
-"Any recommendations for me?"
-"How do referrals work?"
-
-How can I help you today? 😊`;
-    }
-
-    getContextualResponse(query) {
-        const responses = [
-            '🤔 I\'m not sure about that specific question, but I can help you with points, transactions, recommendations, and referrals!',
-            '💭 That\'s an interesting question! I specialize in helping with loyalty program questions. Try asking about your points or recommendations!',
-            '🎯 I\'m here to help with your loyalty rewards! Ask me about your points balance, transaction history, or referral opportunities.',
-            '✨ I didn\'t quite understand that, but I\'m great at helping with loyalty program questions! What would you like to know about your rewards?'
-        ];
-        
-        return responses[Math.floor(Math.random() * responses.length)];
-    }
 }
 
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    new LoyaltyApp();
+    window.loyaltyApp = new LoyaltyApp();
 });
 
 // Utility functions

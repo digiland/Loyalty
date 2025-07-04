@@ -7,6 +7,7 @@ from database import engine
 from routers import auth, loyalty
 from routers.loyalty_programs import router as loyalty_programs_router
 from routers.extra import router as extra_router
+from routers.mcp_server import router as mcp_router
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -25,11 +26,12 @@ app.include_router(auth.router)
 app.include_router(loyalty.router)
 app.include_router(loyalty_programs_router)
 app.include_router(extra_router)
+app.include_router(mcp_router)
 
 # Root endpoint
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the Loyalty Platform API"}
+    return {"message": "Welcome to the Loyalty Platform API - MCP Server Ready"}
 
 # Mount static files for customer portal if directory exists
 frontend_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "src", "assets", "customer")

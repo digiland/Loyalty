@@ -1,0 +1,48 @@
+✅ Gemini Assistant initialized
+🌐 Customer UI server running at http://localhost:5500
+🔗 Backend API URL: http://localhost:8000
+Make sure your FastAPI backend is running
+MCP Chat API error: TypeError: geminiAssistant.processMessageWithMCP is not a function
+    at /Users/adrianmadhigi/Desktop/Loyalty/customer-ui/server-new.js:86:46
+    at Layer.handle [as handle_request] (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/layer.js:95:5)
+    at next (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/layer.js:95:5)
+    at /Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/index.js:280:10)
+    at serveStatic (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/serve-static/index.js:75:16)
+    at Layer.handle [as handle_request] (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/layer.js:95:5)
+MCP Chat API error: TypeError: geminiAssistant.processMessageWithMCP is not a function
+    at /Users/adrianmadhigi/Desktop/Loyalty/customer-ui/server-new.js:86:46
+    at Layer.handle [as handle_request] (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/layer.js:95:5)
+    at next (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/layer.js:95:5)
+    at /Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/index.js:280:10)
+    at serveStatic (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/serve-static/index.js:75:16)
+    at Layer.handle [as handle_request] (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/layer.js:95:5)
+MCP Chat API error: TypeError: geminiAssistant.processMessageWithMCP is not a function
+    at /Users/adrianmadhigi/Desktop/Loyalty/customer-ui/server-new.js:86:46
+    at Layer.handle [as handle_request] (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/layer.js:95:5)
+    at next (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/layer.js:95:5)
+    at /Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/index.js:280:10)
+    at serveStatic (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/serve-static/index.js:75:16)
+    at Layer.handle [as handle_request] (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/layer.js:95:5)
+MCP Chat API error: TypeError: geminiAssistant.processMessageWithMCP is not a function
+    at /Users/adrianmadhigi/Desktop/Loyalty/customer-ui/server-new.js:86:46
+    at Layer.handle [as handle_request] (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/layer.js:95:5)
+    at next (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/layer.js:95:5)
+    at /Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/index.js:280:10)
+    at serveStatic (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/serve-static/index.js:75:16)
+    at Layer.handle [as handle_request] (/Users/adrianmadhigi/Desktop/Loyalty/customer-ui/node_modules/express/lib/router/layer.js:95:5)

@@ -9,7 +9,7 @@ import socketserver
 import os
 import sys
 
-def run_server(port=3000):
+def run_server(port=5500):
     """Run a simple HTTP server to serve the customer UI"""
     
     # Change to the customer-ui directory
@@ -36,11 +36,11 @@ def run_server(port=3000):
             raise
 
 if __name__ == "__main__":
-    port = 3000
+    port = 5500
     if len(sys.argv) > 1:
         try:
             port = int(sys.argv[1])
         except ValueError:
-            print("Invalid port number. Using default port 3000.")
+            print("Invalid port number. Using default port 5500.")
     
     run_server(port)

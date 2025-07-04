@@ -6,6 +6,7 @@ This is a Minimum Viable Product (MVP) for a multi-business loyalty program wher
 
 - `backend/`: FastAPI backend application
 - `frontend/`: Angular admin interface
+- `customer-ui/`: Modern customer portal with LLM-powered chat assistant
 - `loyalty.db`: SQLite database file
 
 ## Tech Stack
@@ -13,7 +14,7 @@ This is a Minimum Viable Product (MVP) for a multi-business loyalty program wher
 - **Backend**: FastAPI (Python)
 - **Database**: SQLite
 - **Admin UI**: Angular with Tailwind CSS
-- **Customer UI**: Simple HTML/CSS/JavaScript
+- **Customer UI**: Modern HTML/CSS/JavaScript with LLM-powered chat assistant
 
 ## Features
 
@@ -71,7 +72,43 @@ The admin interface will be available at http://localhost:4200
 
 ### Customer Portal
 
-The customer-facing portal is served by FastAPI at http://localhost:8000/customer
+#### Option 1: Standalone Customer UI (Recommended)
+```bash
+cd customer-ui
+./setup.sh
+```
+
+The modern customer UI will be available at http://localhost:5500
+
+#### Option 2: Basic Customer Portal (Legacy)
+The basic customer-facing portal is served by FastAPI at http://localhost:8000/customer
+
+## Customer UI Features
+
+### 🎯 Modern Customer Portal
+- **Responsive Design**: Works on desktop, tablet, and mobile
+- **Points Balance Check**: Enter phone number to check loyalty points
+- **Transaction History**: View detailed earning and redemption history
+- **Visual Statistics**: See points earned vs redeemed with modern charts
+- **Personalized Recommendations**: AI-driven suggestions based on customer behavior
+
+### 🤖 LLM-Powered Chat Assistant
+- **Natural Language Processing**: Ask questions in plain English
+- **Context-Aware Responses**: Understands loyalty program context
+- **Multi-Topic Support**: 
+  - Points balance inquiries ("How many points do I have?")
+  - Transaction history ("Show my recent transactions")
+  - Recommendations ("Any suggestions for me?")
+  - Referral information ("How do referrals work?")
+  - General help ("What can you do?")
+- **Real-Time Integration**: Connects to backend APIs for live data
+- **Beautiful UI**: Modern chat interface with typing indicators
+
+### 📱 Mobile-First Design
+- Glass-effect styling with gradient backgrounds
+- Smooth animations and transitions
+- Touch-friendly interface
+- Optimized for all screen sizes
 
 ## Admin Interface
 

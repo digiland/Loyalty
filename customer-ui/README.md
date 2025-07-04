@@ -75,7 +75,7 @@ The AI assistant can handle various types of queries:
    ```
 
 3. **Access the UI**:
-   - Open your browser to `http://localhost:3000`
+   - Open your browser to `http://localhost:5500`
    - Make sure your FastAPI backend is running on `http://localhost:8000`
 
 ## API Integration
